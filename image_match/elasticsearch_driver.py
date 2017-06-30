@@ -109,3 +109,21 @@ class SignatureES(SignatureDatabaseBase):
         if len(matching_paths) > 0:
             for id_tag in matching_paths[1:]:
                 self.es.delete(index=self.index, doc_type=self.doc_type, id=id_tag)
+
+    def delete_record_by_path(self, path):
+        """Delete all but one entries in elasticsearch whose `path` value is equivalent to that of path.
+        Args:
+            path (string): path value to compare to those in the elastic search
+        """
+        matching_paths = [item['_id'] for item in
+                          self.es.search(body={'query':
+                                               {'match':
+                                                {'path': path}
+                                               }
+                                              },
+                                         index=self.index)['hits']['hits']
+                          if item['_source']['path'] == path]
+        if len(matching_paths) > 0:
+            for id_tag in matching_paths:
+                self.es.delete(index=self.index, doc_type=self.doc_type, id=id_tag)
+        return len(matching_paths)
